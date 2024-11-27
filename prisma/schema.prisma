@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum VideoStatus {
+  PROCESSING
+  TRANSCODED
+  FAILED
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  username  String    @unique
+  password  String
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  channel   Channel?
+  videos    Video[]
+
+  @@map("users")
+}
+
+model Channel {
+  id              String    @id @default(uuid())
+  name            String
+  description     String?
+  slug            String    @unique
+  subscriberCount Int       @default(0) @map("subscriber_count")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  userId          String    @unique @map("user_id")
+  user            User      @relation(fields: [userId], references: [id])
+  videos          Video[]
+
+  @@map("channels")
+}
+
+model Video {
+  id           String      @id @default(uuid())
+  title        String
+  description  String?
+  url          String
+  thumbnailUrl String?     @map("thumbnail_url")
+  viewCount    Int         @default(0) @map("view_count")
+  status       VideoStatus @default(PROCESSING)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  channelId    String      @map("channel_id")
+  channel      Channel     @relation(fields: [channelId], references: [id])
+  userId       String      @map("user_id")
+  user         User        @relation(fields: [userId], references: [id])
+  videoUrls    VideoUrl[]
+
+  @@map("videos")
+}
+
+model VideoUrl {
+  id      String @id @default(uuid())
+  videoId String @map("video_id")
+  quality String
+  url     String
+  video   Video  @relation(fields: [videoId], references: [id])
+
+  @@map("video_urls")
+} 

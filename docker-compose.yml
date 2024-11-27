@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=ytapp
+    ports:
+      - '5432:5432'
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3001:3000'
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/ytapp
+      - JWT_SECRET=12345678
+      - NODE_ENV=production
+      - STORAGE_BUCKET=ytapp-videos
+      - STORAGE_REGION=us-east-1
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/uploads
+
+volumes:
+  db:
+    driver: local
+  uploads:
+    driver: local
